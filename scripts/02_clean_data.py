@@ -13,11 +13,11 @@ Why this approach:
 
 
 import pandas as pd
-import os
+
 
 input_path = "data/raw/original_synthetic_bloodwork.csv"
 output_path = "data/cleaned/cleaned_bloodwork.csv"
-#os.makedirs("data/cleaned", exist_ok=True)
+
 
 #Load dataset
 df = pd.read_csv(input_path, encoding="latin1")
@@ -34,6 +34,7 @@ df["Date"] = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
 
 #Convert edad to integer and replace invalid with NaN
 df["edad"] = pd.to_numeric(df["edad"], errors="coerce")
+df["edad"] = df["edad"].astype("Int64")
 df.loc[df["edad"] == 0, "edad"] = pd.NA  # Mark 0 ages as missing
 
 # Handle missing values
