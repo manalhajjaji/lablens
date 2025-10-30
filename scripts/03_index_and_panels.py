@@ -63,7 +63,7 @@ df = pd.read_csv(
         "nombre2": "string"
     }
 )
-
+log.info(f"nombre2 avec 'UNKNOWN' : {(df['nombre2'] == 'UNKNOWN').sum():,} lignes")
 log.info(f"Données chargées : {df.shape[0]:,} lignes, {df.shape[1]} colonnes")
 log.info(f"Plage de dates : {df['Date'].min().date()} → {df['Date'].max().date()}")
 log.info(f"Patients uniques : {df['numorden'].nunique():,}")
