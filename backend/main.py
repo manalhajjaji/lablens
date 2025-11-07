@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import stats, panels, repeats, coordering, export
+from backend.routers import stats, panels, repeats, coordering, export , loader
 
 app = FastAPI(
     title="LabLens API",
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.include_router(loader.router)
 app.include_router(stats.router)
 app.include_router(panels.router)
 app.include_router(repeats.router)

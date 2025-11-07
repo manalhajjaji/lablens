@@ -46,7 +46,16 @@ df["nombre2"] = df["nombre2"].fillna("Unknown")
 
 #Ensure textores is flexible (string)
 df["textores"] = df["textores"].astype(str)
+ 
+#  Format numeric textores values with 2 decimal places
+def format_textores(val):
+    try:
+        num = float(val)
+        return f"{num:.2f}"
+    except ValueError:
+        return val  # if not numeric, keep original string
 
+df["textores"] = df["textores"].apply(format_textores)
 #Save cleaned data
 df.to_csv(output_path, index=False, encoding="utf-8")
 print(f"Cleaned dataset saved to: {output_path}")

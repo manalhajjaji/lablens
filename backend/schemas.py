@@ -32,4 +32,12 @@ class FilterCondition(BaseModel):
 
 class CohortFilter(BaseModel):
     conditions: List[FilterCondition]
-    logic: str = "AND"  # AND / OR
+    logic: str = "AND"  # AND / OR  
+
+class UploadResponse(BaseModel):
+    rows: int
+    message: str
+
+class SubsetResponse(BaseModel):
+    rowcount: int
+    records: List[dict]
