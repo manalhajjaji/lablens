@@ -7,10 +7,10 @@ Why this approach:
 - Dropping rows with missing or zero age ensures the dataset is consistent for age-based analysis.
 - Filling missing 'nombre2' with "Unknown" prevents loss of rows where other data is valid.
 - Keeping 'textores' flexible maintains compatibility with both numeric and qualitative lab results.
+- Dropping rows where sexo is not 'F' or 'M' enforces the exact schema (M/F only).
 
 
 """
-
 
 import pandas as pd
 
@@ -46,6 +46,13 @@ df["nombre2"] = df["nombre2"].fillna("Unknown")
 
 #Ensure textores is flexible (string)
 df["textores"] = df["textores"].astype(str)
+
+# NOUVEAU : Suppression des lignes où sexo != 'F' et != 'M'
+print(f"Sexo values before cleaning: {df['sexo'].unique()}")
+print(f"Nombre de lignes AVANT suppression sexo invalide: {len(df)}")
+df = df[df['sexo'].isin(['F', 'M'])]
+print(f"Sexo values after cleaning: {df['sexo'].unique()}")
+print(f"Nombre de lignes APRÈS suppression sexo invalide: {len(df)}")
 
 #Save cleaned data
 df.to_csv(output_path, index=False, encoding="utf-8")
