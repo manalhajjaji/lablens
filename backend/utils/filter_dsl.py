@@ -1,13 +1,20 @@
 # backend/utils/filter_dsl.py
-from typing import List
+from typing import List, Tuple
 from backend.schemas import FilterCondition
 
-def build_where_clause(conditions: List[FilterCondition], logic: str = "AND") -> str:
+ALLOWED_COLUMNS = ["numorden", "sexo", "edad", "nombre", "textores", "nombre2", "Date"]
+
+def build_where_clause(conditions: List[FilterCondition], logic: str = "AND") -> Tuple[str, List]:
     if not conditions:
-        return "1=1"
+        return "1=1", []
 
     clauses = []
+    params = []
+
     for cond in conditions:
+        if cond.column not in ALLOWED_COLUMNS:
+            raise ValueError(f"Colonne non autorisée : {cond.column}")
+
         col = cond.column
         op = cond.operator
         val = cond.value
@@ -20,18 +27,31 @@ def build_where_clause(conditions: List[FilterCondition], logic: str = "AND") ->
             clause = f"{col} > ?"
         elif op == "lt":
             clause = f"{col} < ?"
+        elif op == "ge":
+            clause = f"{col} >= ?"
+        elif op == "le":
+            clause = f"{col} <= ?"
         elif op == "in":
+            if not isinstance(val, list):
+                raise ValueError("Opérateur 'in' nécessite une liste")
             placeholders = ",".join(["?"] * len(val))
             clause = f"{col} IN ({placeholders})"
+            params.extend(val)
+            clauses.append(clause)
+            continue
         elif op == "contains":
             clause = f"LOWER({col}) LIKE LOWER(?)"
             val = f"%{val}%"
         else:
-            raise ValueError(f"Unsupported operator: {op}")
+            raise ValueError(f"Opérateur non supporté : {op}")
 
-        if op not in ["eq", "ne"] or val is not None:
-            clauses.append((clause, val))
+        clauses.append(clause)
+        if val is not None:
+            params.append(val)
 
-    where_sql = f" {logic} ".join([c[0] for c in clauses])
-    params = [c[1] for c in clauses if len(c) > 1]
+    if not clauses:
+        return "1=1", []
+
+    # CORRECTION ICI : enlever les parenthèses autour du JOIN
+    where_sql = f" {logic} ".join(clauses)
     return where_sql, params

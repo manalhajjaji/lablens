@@ -1,6 +1,6 @@
 # backend/schemas.py
 from pydantic import BaseModel
-from typing import List, Optional, Any
+from typing import Optional,List, Dict, Any
 from datetime import date
 
 class PanelResponse(BaseModel):
@@ -33,3 +33,20 @@ class FilterCondition(BaseModel):
 class CohortFilter(BaseModel):
     conditions: List[FilterCondition]
     logic: str = "AND"  # AND / OR
+
+class CohortRow(BaseModel):
+    numorden: str
+    sexo: str
+    edad: Optional[int] = None
+    nombre: str
+    textores: str
+    nombre2: str
+    Date: str  # ← CHANGÉ ICI
+
+    class Config:
+        from_attributes = True
+
+class CohortQueryResponse(BaseModel):
+    data: List[CohortRow]
+    total: int                     # nombre total de lignes (sans LIMIT)
+    filtered: int

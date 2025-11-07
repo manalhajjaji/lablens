@@ -5,11 +5,13 @@ import duckdb
 import pandas as pd
 from io import BytesIO
 from backend.database import get_con
+from backend.models import get_current_user, User
+
 
 router = APIRouter(prefix="/export", tags=["export"])
 
 @router.get("/panels/csv")
-def export_panels_csv(con: duckdb.DuckDBPyConnection = Depends(get_con)):
+def export_panels_csv(current_user: User = Depends(get_current_user),con: duckdb.DuckDBPyConnection = Depends(get_con)):
     df = con.execute("SELECT * FROM panels").fetchdf()
     csv = df.to_csv(index=False)
     return Response(csv, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=panels.csv"})

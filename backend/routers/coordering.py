@@ -2,11 +2,12 @@
 from fastapi import APIRouter, Depends
 import duckdb
 from backend.database import get_con
+from backend.models import get_current_user, User
 
 router = APIRouter(prefix="/coordering", tags=["coordering"])
 
 @router.get("/top-pairs")
-def get_top_coordered(limit: int = 50, con: duckdb.DuckDBPyConnection = Depends(get_con)):
+def get_top_coordered(limit: int = 50, current_user: User = Depends(get_current_user), con: duckdb.DuckDBPyConnection = Depends(get_con)):
     df = con.execute("""
         SELECT
             r1.nombre AS test1,
