@@ -1,0 +1,38 @@
+services:
+  # --- SERVICE BACKEND ---
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: lablens_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # PERSISTANCE : Les fichiers uploadés seront stockés dans ton dossier 'data' local
+      - ./data:/app/data
+      # DEVELOPPEMENT : Permet de modifier le code Python sans redémarrer Docker
+      - ./backend:/app/backend
+      - ./scripts:/app/scripts
+    environment:
+      - PYTHONPATH=/app
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    restart: unless-stopped
+
+  # --- SERVICE FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lablens_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Synchronise le code frontend pour voir les modifs en direct
+      - ./frontend:/app
+      # Règle importante : ne pas écraser les node_modules du conteneur avec ceux du local
+      - /app/node_modules
+    environment:
+      # Indique au navigateur où se trouve l'API
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend 
