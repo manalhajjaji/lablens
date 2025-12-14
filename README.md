@@ -16,7 +16,7 @@ Elle offre un subsetting libre, des vues de cohortes sauvegardables, des statist
   - Panels de tests (même patient, même jour)
   - Analyses de répétitions (tests répétés sur plusieurs dates)
   - Paires de tests co-prescrits (co-ordering) avec heatmaps
-- **Export** CSV / XLSX
+- **Export** CSV 
 - **Assistant LLM** : posez des questions en langage naturel ("Montre-moi les patients de plus de 60 ans avec glucose élevé", "Compare la créatinine hommes/femmes", etc.) → l'IA génère automatiquement les filtres, exécute la requête et explique son raisonnement
 
 ## Schéma des données
@@ -36,9 +36,9 @@ Chaque ligne = un résultat biologique
 ## Architecture technique
 
 - **Backend** : FastAPI + DuckDB (en dev)  
-- **Base de données** : DuckDB (fichier `data/raw/lablens.duckdb`) pour requêtes rapides et légères
+- **Base de données** : DuckDB (fichier `data/lablens.duckdb`) pour requêtes rapides et légères
 - **Frontend** : Next.js (React) + Tailwind CSS + ECharts/Plotly pour les graphiques
-- **LLM** : Groq (Llama 3 / Mixtral) via client OpenAI-compatible, avec templates guidés et validation sécurisée
+- **LLM** : Groq (Llama 3) via client OpenAI-compatible, avec templates guidés et validation sécurisée
 - **Conteneurisation** : Docker + Docker Compose
 
 ## Installation & lancement en local
@@ -103,9 +103,9 @@ Le projet charge automatiquement cette variable grâce à `python-dotenv`.
 
 ## Utilisation de l'assistant LLM
 
-Dans la barre de recherche en haut de l'interface :
+Cliquez sur le petit cercle à droite, en bas de l'interface :
 
-- Tapez votre question en français
+- Tapez votre question
 - Exemples :
   - "Patients avec hémoglobine basse et ferritine normale"
   - "Évolution du cholesterol chez les femmes de plus de 50 ans"
@@ -126,14 +126,6 @@ docker compose up --build
 - Requêtes LLM en read-only avec validation et audit
 - Aucune donnée sensible n'est envoyée en dehors du sandbox
 
-## Contributing
-
-Pull requests bienvenues ! Focus actuels :
-
-- Ajout de nouveaux panels
-- Amélioration des prompts LLM
-- Support de bases PostgreSQL en prod
-- Authentification & RBAC
 
 ---
 
