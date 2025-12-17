@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { Upload, CheckCircle, AlertCircle, Loader2, FileText } from 'lucide-react'
 import { loader } from '@/lib/api'
+import { useDataContext } from '@/context/DataContext'
 
 export default function FileUploader({ onSuccess }: { onSuccess?: (data: any) => void }) {
+  const { markDataAsLoaded } = useDataContext()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -35,6 +37,9 @@ export default function FileUploader({ onSuccess }: { onSuccess?: (data: any) =>
       
       console.log('✅ Upload success:', response.data)
       setResult(response.data)
+      
+      // Marquer les données comme chargées
+      markDataAsLoaded()
       
       if (onSuccess) {
         onSuccess(response.data)
@@ -110,6 +115,9 @@ export default function FileUploader({ onSuccess }: { onSuccess?: (data: any) =>
               <p className="font-bold text-green-900 text-lg">Succès !</p>
               <p className="text-green-800 mt-1">
                  Le fichier <strong>{result.filename}</strong> a été nettoyé et chargé.
+              </p>
+              <p className="text-sm text-green-700 mt-2">
+                Les autres onglets et l'assistant IA sont maintenant disponibles. Vous pouvez les utiliser dès maintenant.
               </p>
       
             </div>

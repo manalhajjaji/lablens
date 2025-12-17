@@ -1,7 +1,10 @@
 import pandas as pd
 from typing import Any, Dict
 import os
-from openai import OpenAI 
+import numpy as np
+import math
+from openai import OpenAI
+import re 
 
 # Initialize OpenAI client with Groq endpoint
 client = OpenAI(
@@ -38,7 +41,7 @@ def get_llm_code(prompt: str, context: str = "") -> str:
     - `edad` (Age, numeric)
     - `nombre` (Test name, e.g., 'GLUCOSA')
     - `nombre2` (Service/Department)
-    - `textores` (Result value, mixed type: numeric or text)
+    - `textores` (Result value, mixed type: numeric or text, may contain non-numeric values like 'TRACE')
     - `Date` (Date string dd/mm/yyyy)
 
     {context}
@@ -50,22 +53,25 @@ def get_llm_code(prompt: str, context: str = "") -> str:
     2. The code must be an expression that evaluates to the result (e.g., `df['edad'].mean()`).
     3. DO NOT assign variables or use print(). Just the expression.
     4. **IMPORTANT**: When filtering text columns (nombre, nombre2), ALWAYS use `.str.contains('term', case=False, na=False)` instead of `==` to be robust.
-    5. Handle `textores` carefully. If doing math (mean, max), convert to numeric: `pd.to_numeric(df['textores'], errors='coerce')`.
+    5. Handle `textores` carefully - it contains mixed types:
+       - ALWAYS use `pd.to_numeric(df['textores'], errors='coerce')` when doing math operations.
+       - This safely converts non-numeric values to NaN instead of crashing.
+       - Example: `pd.to_numeric(df['textores'], errors='coerce').mean()` to calculate average.
     6. If asking for a list of patients, return `df[...]`.
-    7. If he sends a question that cannot be answered with the data, tell the user "Sorry, I can't answer that with the available data.".
+    7. If the user sends a question that cannot be answered with the data, tell the user "Sorry, I can't answer that with the available data.".
     8. LANGUAGE MATCHING IS MANDATORY:
        - If the user asks in English, you MUST respond in English.
        - If the user asks in French, you MUST respond in French.
-    9. Conversational examples:
-       - User: "Hello" -> You: "Hello! How can I assist you?"
-       - User: "Bonjour" -> You: "Bonjour ! Comment puis-je vous aider ?"
+    9. Conversational examples (These should return text, NOT code):
+       - User: "Hello" -> You: "Hello! How can I assist you with your blood work data?"
+       - User: "Bonjour" -> You: "Bonjour ! Comment puis-je vous aider avec vos données biologiques ?"
        - User: "What is your role?" -> You: "I am LabLens Explorer, here to help you analyze the blood dataset."
        - User: "Quel est ton rôle ?" -> You: "Je suis LabLens Explorer, ici pour vous aider à analyser le dataset."
-    10. If the user says "Thank you", respond in the same language.
+    10. If the user says "Thank you" or similar gratitude, respond in the same language.
+    11. CRITICAL: Always ensure the code is safe and will not crash due to type errors. Use errors='coerce' for conversions.
     """
 
     response = client.chat.completions.create(
-        # 2. Changez le modèle (GPT-4 n'existe pas chez Groq, utilisez Llama3)
         model="llama-3.3-70b-versatile", 
         messages=[
             {"role": "system", "content": system_prompt},
@@ -117,17 +123,45 @@ def safe_execute_pandas(code: str, df: pd.DataFrame) -> Any:
     Executes the code in a restricted local scope containing only `df` and `pd`.
     """
     # Safety check: prevent import or dangerous builtins
-    forbidden = ['import', 'exec', 'eval', 'open', 'os', 'sys', 'subprocess']
+    forbidden = ['import', 'exec', 'eval', 'open', '__import__']
     if any(word in code for word in forbidden):
         raise ValueError("Unsafe code detected.")
 
-    local_scope = {'df': df, 'pd': pd}
+    local_scope = {'df': df, 'pd': pd, 'np': np, 'math': math}
+    
+    # Allow essential builtins that pandas/numpy need to function properly
+    safe_builtins = {
+        'abs': abs,
+        'len': len,
+        'sum': sum,
+        'min': min,
+        'max': max,
+        'round': round,
+        'range': range,
+        'list': list,
+        'dict': dict,
+        'tuple': tuple,
+        'set': set,
+        'sorted': sorted,
+        'enumerate': enumerate,
+        'zip': zip,
+        'filter': filter,
+        'map': map,
+        'float': float,
+        'int': int,
+        'str': str,
+        'bool': bool,
+        'type': type,
+        'isinstance': isinstance,
+        'hasattr': hasattr,
+        'getattr': getattr,
+    }
     
     try:
         # eval() is used for expressions. 
         # If the LLM generates complex statements, we might need exec(), 
         # but eval is safer for "single line return" logic.
-        result = eval(code, {"__builtins__": {}}, local_scope)
+        result = eval(code, {"__builtins__": safe_builtins}, local_scope)
         return result
     except Exception as e:
         raise ValueError(f"Execution error: {str(e)}")
@@ -146,9 +180,10 @@ def process_natural_language_query(prompt: str, df: pd.DataFrame) -> Dict[str, A
         # --- HEURISTIC FOR CONVERSATIONAL RESPONSES ---
         # If the LLM returns a sentence instead of code (due to the new rules),
         # we shouldn't try to execute it.
-        # We assume valid code must contain 'df' or 'pd'.
-        if "df" not in code and "pd" not in code:
-             return {
+        # Check if it's a conversational response (greeting, general question, etc.)
+        if not ('df[' in code or 'pd.' in code or 'np.' in code):
+            # Likely a conversational response
+            return {
                 "result": None,
                 "query_executed": None,
                 "explanation": code
@@ -185,8 +220,19 @@ def process_natural_language_query(prompt: str, df: pd.DataFrame) -> Dict[str, A
         }
         
     except Exception as e:
+        # Better error handling - return user-friendly message
+        error_msg = str(e)
+        
+        # Extract key info from error
+        if "could not convert string to float" in error_msg:
+            friendly_msg = f"I encountered a data type issue when processing your query. Some values might not be numeric. {error_msg}"
+        elif "name" in error_msg and "is not defined" in error_msg:
+            friendly_msg = f"There was an issue with the code generation. Please try asking your question differently."
+        else:
+            friendly_msg = f"I couldn't process that query. Error: {error_msg}"
+        
         return {
             "result": None,
             "query_executed": "Error",
-            "explanation": f"I couldn't process that query. Error: {str(e)}"
+            "explanation": friendly_msg
         }

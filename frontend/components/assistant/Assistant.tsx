@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { MessageCircle, X, Send, Bot, Sparkles, Loader2, ChevronDown, ChevronUp, Database, Code, User } from "lucide-react"
 import { llm } from "@/lib/api"
+import { useDataContext } from "@/context/DataContext"
 
 type Message = {
   role: "assistant" | "user"
@@ -12,6 +13,7 @@ type Message = {
 }
 
 export default function FloatingAssistant() {
+  const { isDataLoaded } = useDataContext()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -67,6 +69,11 @@ export default function FloatingAssistant() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Ne pas afficher l'assistant tant que les données ne sont pas chargées
+  if (!isDataLoaded) {
+    return null
   }
 
   return (

@@ -6,6 +6,7 @@ import {
   Home, Database, BarChart3, Layers, 
   Repeat, Network, FileUp 
 } from 'lucide-react'
+import { useDataContext } from '@/context/DataContext'
 
 const menuItems = [
   { href: '/', label: 'Upload CSV', icon: FileUp },
@@ -19,6 +20,7 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { isDataLoaded } = useDataContext()
 
   return (
     <aside className="w-64 bg-gray-900 text-white flex flex-col h-screen">
@@ -31,6 +33,14 @@ export default function Sidebar() {
         {menuItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
+          
+          // Afficher uniquement l'onglet Upload ou tous les onglets si data est chargée
+          const isUploadTab = item.href === '/'
+          const shouldDisplay = isUploadTab || isDataLoaded
+          
+          if (!shouldDisplay) {
+            return null
+          }
           
           return (
             <Link
