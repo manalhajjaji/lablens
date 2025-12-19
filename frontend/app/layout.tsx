@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Sidebar from '@/components/layout/Sidebar'
-import Navbar from '@/components/layout/Navbar'
 import Assistant from '@/components/assistant/Assistant'
 import { DataProvider } from '@/context/DataContext'
 
@@ -27,9 +26,9 @@ export default function RootLayout({
             {/* Barre latérale gauche */}
             <Sidebar />
             
-            {/* Zone principale avec Navbar et Contenu */}
+            {/* Zone principale sans la Navbar */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              <Navbar />
+              {/* Le composant <Navbar /> a été supprimé ici */}
               
               <main className="flex-1 overflow-y-auto p-6">
                 {children}
