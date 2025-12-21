@@ -37,7 +37,7 @@ Chaque ligne = un résultat biologique
 
 - **Backend** : FastAPI + DuckDB (en dev)  
 - **Base de données** : DuckDB (fichier `data/lablens.duckdb`) pour requêtes rapides et légères
-- **Frontend** : Next.js (React) + Tailwind CSS + ECharts/Plotly pour les graphiques
+- **Frontend** : Next.js (React) + Tailwind CSS + Recharts/ApexCharts pour les graphiques
 - **LLM** : Groq (Llama 3) via client OpenAI-compatible, avec templates guidés et validation sécurisée
 - **Conteneurisation** : Docker + Docker Compose
 
